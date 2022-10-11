@@ -1,12 +1,20 @@
+import * as dotenv from "dotenv";
+
+//Load environment variables
+dotenv.config();
+
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import helmet from "helmet";
 import { CORS_ORIGIN, PORT } from "./config/constants";
 import { logger, connectToDatabase, disconnectFromDatabase } from "./api/utils";
+import { sessionRoutes, userRoutes } from "./api/v1/routes";
+import deserializeUser from "./api/middlewares/deserializeUsers";
 
 const app = express();
 
+//middleware
 app.use(cookieParser());
 app.use(express.json());
 app.use(
@@ -16,6 +24,11 @@ app.use(
   })
 );
 app.use(helmet());
+app.use(deserializeUser);
+
+//routes
+app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/sessions", sessionRoutes);
 
 const server = app.listen(PORT, async () => {
   await connectToDatabase();

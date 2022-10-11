@@ -2,7 +2,7 @@ import knex from "knex";
 import config from "../../config/database/knexfile";
 import logger from "./logger";
 import { NODE_ENV } from "../../config/constants";
-const db = knex(config[NODE_ENV]);
+export const db = knex(config[NODE_ENV]);
 
 export async function connectToDatabase() {
   await db
