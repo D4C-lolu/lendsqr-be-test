@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { get } from "lodash";
-import sessionService from "../services/session.service";
+import { reIssueAccessToken } from "../services/session.service";
 import { verifyJWT } from "../utils/jwt.utils";
 
 const deserializeUser = async (
@@ -23,7 +23,7 @@ const deserializeUser = async (
     res.locals.user = decoded;
   }
   if (expired && refreshToken) {
-    const newAccessToken = await sessionService.reIssueAccessToken({
+    const newAccessToken = await reIssueAccessToken({
       refreshToken,
     });
 

@@ -5,10 +5,12 @@ import { createUserSchema } from "../../schemas/user.schema";
 
 const router = express.Router();
 
+//Health check
 router.get("/", (req: Request, res: Response) => {
   return res.send("E-wallet API up and running!");
 });
 
+//Sign up
 router.post("/", validateResource(createUserSchema), userController.createUser);
 
 export default router;

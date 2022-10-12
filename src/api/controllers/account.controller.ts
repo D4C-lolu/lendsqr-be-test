@@ -1,22 +1,21 @@
-import accountService, { AccountService } from "../services/account.service";
+import {
+  createAccount,
+  getAccountDetails,
+  getTransactionHistory,
+  transferAmount,
+  verifyAccount,
+  withdrawFunds,
+} from "../services/account.service";
 import { Request, Response } from "express";
 import { logger } from "../utils";
 import { StatusCodes } from "http-status-codes";
 import { CreateAccountInput } from "../schemas/account.schema";
-import userService, { UserService } from "../services/user.service";
+import { verifyUser } from "../services/user.service";
 import { CreateTransactionInput } from "../schemas/transaction.schema";
 import { WithdrawFundsInput } from "../schemas/withdrawFunds.schema";
 import { FundAccountInput } from "../schemas/fundAccount.schema";
 
 class AccountController {
-  accountService: AccountService;
-  userService: UserService;
-
-  constructor(accountService: AccountService, userService: UserService) {
-    this.accountService = accountService;
-    this.userService = userService;
-  }
-
   async createAccount(
     req: Request<{}, {}, CreateAccountInput["body"]>,
     res: Response
@@ -24,7 +23,7 @@ class AccountController {
     try {
       const { email, pin, password } = req.body;
       //validate user password
-      const user = await this.userService.verifyUser({ email, password });
+      const user = await verifyUser({ email, password });
       if (!user) {
         return res
           .status(StatusCodes.UNAUTHORIZED)
@@ -32,10 +31,7 @@ class AccountController {
       }
       const { user_id } = user;
       //create account
-      const account_number = await this.accountService.createAccount(
-        user_id,
-        pin
-      );
+      const account_number = await createAccount(user_id, pin);
       return res.status(StatusCodes.CREATED).send(account_number);
     } catch (err: any) {
       logger.error(err);
@@ -48,7 +44,7 @@ class AccountController {
     if (!userId) {
       return res.status(StatusCodes.UNAUTHORIZED).send("No active user");
     }
-    const details = await this.accountService.getAccountDetails(userId);
+    const details = await getAccountDetails(userId);
     return res.json(details);
   }
 
@@ -66,7 +62,7 @@ class AccountController {
     } = req.body;
     try {
       //validate user pin
-      const account = await this.accountService.verifyAccount(
+      const account = await verifyAccount(
         sender_account_number,
         pin.toString()
       );
@@ -74,7 +70,7 @@ class AccountController {
         return res.status(StatusCodes.UNAUTHORIZED).send("Invalid pin");
       }
       //create transaction
-      const transaction = await this.accountService.transferAmount(
+      const transaction = await transferAmount(
         sender_account_number,
         receiver_account_number,
         amount,
@@ -94,7 +90,7 @@ class AccountController {
   ) {
     const { sender_account_number, pin, amount, name, message } = req.body;
     try {
-      const account = await this.accountService.verifyAccount(
+      const account = await verifyAccount(
         sender_account_number,
         pin.toString()
       );
@@ -102,7 +98,7 @@ class AccountController {
         return res.status(StatusCodes.UNAUTHORIZED).send("Invalid pin");
       }
       //create transaction
-      const transaction = await this.accountService.withdrawFunds(
+      const transaction = await withdrawFunds(
         sender_account_number,
         amount,
         name,
@@ -121,7 +117,7 @@ class AccountController {
   ) {
     const { receiver_account_number, pin, amount, name, message } = req.body;
     try {
-      const account = await this.accountService.verifyAccount(
+      const account = await verifyAccount(
         receiver_account_number,
         pin.toString()
       );
@@ -129,7 +125,7 @@ class AccountController {
         return res.status(StatusCodes.UNAUTHORIZED).send("Invalid pin");
       }
       //create transaction
-      const transaction = await this.accountService.withdrawFunds(
+      const transaction = await withdrawFunds(
         receiver_account_number,
         amount,
         name,
@@ -147,14 +143,10 @@ class AccountController {
     if (!userId) {
       return res.status(StatusCodes.UNAUTHORIZED).send("No active user");
     }
-    const { account_number } = await this.accountService.getAccountDetails(
-      userId
-    );
-    const history = await this.accountService.getTransactionHistory(
-      account_number
-    );
+    const { account_number } = await getAccountDetails(userId);
+    const history = await getTransactionHistory(account_number);
     return res.json(history);
   }
 }
 
-export default new AccountController(accountService, userService);
+export default new AccountController();

@@ -3,37 +3,23 @@ import * as dotenv from "dotenv";
 //Load environment variables
 dotenv.config();
 
-import express from "express";
-import cookieParser from "cookie-parser";
-import cors from "cors";
-import helmet from "helmet";
-import { CORS_ORIGIN, PORT } from "./config/constants";
-import { logger, connectToDatabase, disconnectFromDatabase } from "./api/utils";
-import { accountRoutes, sessionRoutes, userRoutes } from "./api/v1/routes";
-import deserializeUser from "./api/middlewares/deserializeUsers";
+import { PORT } from "./config/constants";
+import {
+  logger,
+  connectToDatabase,
+  disconnectFromDatabase,
+  createServer,
+} from "./api/utils";
 
-const app = express();
+const app = createServer();
 
-//middleware
-app.use(cookieParser());
-app.use(express.json());
-app.use(
-  cors({
-    origin: CORS_ORIGIN,
-    credentials: true,
-  })
-);
-app.use(helmet());
-app.use(deserializeUser);
-
-//routes
-app.use("/api/v1/users", userRoutes);
-app.use("/api/v1/sessions", sessionRoutes);
-app.use("api/v1/accounts", accountRoutes);
+app.get("/", (req, res) => {
+  res.send("E-wallet API up and running!");
+});
 
 const server = app.listen(PORT, async () => {
   await connectToDatabase();
-  logger.info(`Server listening at htp://localhost:${PORT}`);
+  logger.info(`Server listening at http://localhost:${PORT}`);
 });
 
 const signals = ["SIGINT", "SIGTERM", "SIGQUIT"];

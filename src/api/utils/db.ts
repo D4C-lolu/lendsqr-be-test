@@ -4,6 +4,7 @@ import logger from "./logger";
 import { NODE_ENV } from "../../config/constants";
 export const db = knex(config[NODE_ENV]);
 
+//connect to DB
 export async function connectToDatabase() {
   await db
     .raw("SELECT 1")
@@ -16,6 +17,8 @@ export async function connectToDatabase() {
     });
   return db;
 }
+
+//Destroy DB connection
 export async function disconnectFromDatabase() {
   await db.destroy();
   await logger.info("MYSQL disconnected");

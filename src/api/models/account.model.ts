@@ -14,7 +14,7 @@ export async function createAccountTable(knex: Knex): Promise<void> {
         .onDelete("CASCADE");
       table.timestamps(true, true);
     })
-    .raw("ALTER TABLE accounts AUTO_INCREMENT = 1000000001");
+    .raw("ALTER TABLE accounts AUTO_INCREMENT = 1000000000");
 }
 
 export interface Account {

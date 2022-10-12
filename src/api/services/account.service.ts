@@ -1,166 +1,189 @@
-import { Knex } from "knex";
 import { db } from "../utils";
 import { Account } from "../models/account.model";
 import { BANK_ACCOUNT_NUMBER } from "../../config/constants";
 import argon2 from "argon2";
 import { omit } from "lodash";
 
-export class AccountService {
-  knex: Knex;
+//create account and link to user
+export async function createAccount(userId: string, pin: number) {
+  //hash pin before storing
+  const hashedPin = hashPin(pin.toString());
+  //insert new record into account table
+  const account_number = await db("accounts").insert({
+    account_user: userId,
+    pin: hashedPin,
+  });
 
-  constructor(knex: Knex) {
-    this.knex = knex;
+  return account_number;
+}
+
+//return balance and account number of user
+export async function getAccountDetails(userId: string) {
+  const [account_number, balance] = await db("accounts")
+    .where({
+      account_user: userId,
+    })
+    .first();
+
+  return { account_number, balance };
+}
+
+//return user associated with account
+export async function getAccountOwner(userAccount: string) {
+  const user = await db<Account>("accounts")
+    .where({
+      account_number: userAccount,
+    })
+    .first();
+
+  return omit(user, "password");
+}
+
+//verify that account number and pin match
+export async function verifyAccount(userAccount: string, pin: string) {
+  //get account user
+  const account = await getAccountOwner(userAccount);
+  if (!account) {
+    return false;
   }
 
-  async createAccount(userId: string, pin: number) {
-    const hashedPin = this.hashPin(pin.toString());
-    const [account_number] = await this.knex("accounts").insert({
+  //compare pin with hash in DB
+  const isValid = await comparePin(pin, account.pin);
+  if (!isValid) {
+    return false;
+  }
+
+  return omit(account, "pin");
+}
+
+//create new transaction record
+export async function createTransaction(
+  senderAccount: string,
+  receiverAccount: string,
+  amount: number,
+  name: string,
+  message?: string
+) {
+  //get accounts of sender and receiver
+  const sender = await getAccountOwner(senderAccount);
+  const receiver = await getAccountOwner(receiverAccount);
+  if (!sender || !receiver) {
+    return "User does not exist";
+  }
+
+  //check if balance is sufficient for transfer
+  if (sender?.balance < amount) {
+    return "Insufficient funds";
+  }
+
+  //insert new transaction record
+  const newTransaction = await db("transaction").insert({
+    name,
+    message,
+    amount,
+    sender_account_number: senderAccount,
+    receiver_account_number: receiverAccount,
+  });
+
+  //adjust sender and receiver account balances
+  if (newTransaction) {
+    await db
+      .where({ account_number: senderAccount })
+      .decrement("balance", amount);
+    await db
+      .where({ account_number: receiverAccount })
+      .increment("balance", amount);
+  }
+
+  return newTransaction;
+}
+
+//transfer funds from Mock Bank account to wallet
+export async function fundAccount(
+  accountNumber: string,
+  amount: number,
+  name: string,
+  message?: string
+) {
+  const transaction = await createTransaction(
+    BANK_ACCOUNT_NUMBER,
+    accountNumber,
+    amount,
+    name
+  );
+
+  return transaction;
+}
+
+//Transfer funds between wallets
+export async function transferAmount(
+  senderAccount: string,
+  receiverAccount: string,
+  amount: number,
+  name: string,
+  message?: string
+) {
+  const transaction = await createTransaction(
+    senderAccount,
+    receiverAccount,
+    amount,
+    name,
+    message
+  );
+
+  return transaction;
+}
+
+//Transfer fund to mock bank account from wallet
+export async function withdrawFunds(
+  accountNumber: string,
+  amount: number,
+  name: string,
+  message?: string
+) {
+  const transaction = await createTransaction(
+    accountNumber,
+    BANK_ACCOUNT_NUMBER,
+    amount,
+    name,
+    message
+  );
+
+  return transaction;
+}
+
+//return an array of all transactions on account
+export async function getTransactionHistory(accountNumber: string) {
+  const transactions = await db("transactions")
+    .where({
+      sender_account_number: accountNumber,
+    })
+    .orWhere({
+      receiver_account_number: accountNumber,
+    });
+
+  return transactions;
+}
+
+export async function hashPin(pin: string) {
+  const hash = await argon2.hash(pin);
+  return hash;
+}
+
+export async function comparePin(pin: string, hash: string) {
+  const isVerified = await argon2.verify(hash, pin);
+  return isVerified;
+}
+
+export async function updatePin(userId: string, pin: number) {
+  const hashedPin = hashPin(pin.toString());
+  const account = await db("accounts")
+    .where({
       account_user: userId,
+    })
+    .update({
       pin: hashedPin,
     });
 
-    return account_number;
-  }
-
-  async getAccountDetails(userId: string) {
-    const [account_number, balance] = await this.knex("accounts").where({
-      account_user: userId,
-    });
-
-    return { account_number, balance };
-  }
-
-  async getAccountOwner(userAccount: string) {
-    const user = await this.knex<Account>("accounts")
-      .where({
-        account_number: userAccount,
-      })
-      .first();
-
-    return user;
-  }
-
-  async verifyAccount(userAccount: string, pin: string) {
-    const account = await this.getAccountOwner(userAccount);
-    if (!account) {
-      return false;
-    }
-
-    const isValid = await this.comparePin(pin, account.pin);
-    if (!isValid) {
-      return false;
-    }
-
-    return omit(account, "pin");
-  }
-
-  async createTransaction(
-    senderAccount: string,
-    receiverAccount: string,
-    amount: number,
-    name: string,
-    message?: string
-  ) {
-    const sender = await this.getAccountOwner(senderAccount);
-    const receiver = await this.getAccountOwner(receiverAccount);
-    if (!sender || !receiver) {
-      return "User does not exist";
-    }
-    if (sender?.balance < amount) {
-      return "Insufficient funds";
-    }
-    const newTransaction = await this.knex("transaction").insert({
-      name,
-      message,
-      amount,
-      sender_account_number: senderAccount,
-      receiver_account_number: receiverAccount,
-    });
-
-    if (newTransaction) {
-      await this.knex
-        .where({ account_number: senderAccount })
-        .decrement("balance", amount);
-      await this.knex
-        .where({ account_number: receiverAccount })
-        .increment("balance", amount);
-    }
-
-    return newTransaction;
-  }
-
-  async fundAccount(
-    accountNumber: string,
-    amount: number,
-    name: string,
-    message?: string
-  ) {
-    const transaction = await this.createTransaction(
-      BANK_ACCOUNT_NUMBER,
-      accountNumber,
-      amount,
-      name
-    );
-
-    return transaction;
-  }
-
-  async transferAmount(
-    senderAccount: string,
-    receiverAccount: string,
-    amount: number,
-    name: string,
-    message?: string
-  ) {
-    const transaction = await this.createTransaction(
-      senderAccount,
-      receiverAccount,
-      amount,
-      name,
-      message
-    );
-
-    return transaction;
-  }
-
-  async withdrawFunds(
-    accountNumber: string,
-    amount: number,
-    name: string,
-    message?: string
-  ) {
-    const transaction = await this.createTransaction(
-      accountNumber,
-      BANK_ACCOUNT_NUMBER,
-      amount,
-      name,
-      message
-    );
-
-    return transaction;
-  }
-
-  async getTransactionHistory(accountNumber: string) {
-    const transactions = await this.knex("transactions")
-      .where({
-        sender_account_number: accountNumber,
-      })
-      .orWhere({
-        receiver_account_number: accountNumber,
-      });
-
-    return transactions;
-  }
-
-  async hashPin(pin: string) {
-    const hash = await argon2.hash(pin);
-    return hash;
-  }
-
-  async comparePin(pin: string, hash: string) {
-    const isVerified = await argon2.verify(hash, pin);
-    return isVerified;
-  }
+  return account;
 }
-
-export default new AccountService(db);

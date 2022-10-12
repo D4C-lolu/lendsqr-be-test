@@ -1,24 +1,20 @@
-import sessionService, { SessionService } from "../services/session.service";
+import {
+  findSession,
+  createSession,
+  updateSession,
+} from "../services/session.service";
 import { Request, Response } from "express";
-import userService, { UserService } from "../services/user.service";
+import { verifyUser } from "../services/user.service";
 import { StatusCodes } from "http-status-codes";
 import { signJWT } from "../utils/jwt.utils";
 import { ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL } from "../../config/constants";
 import { CreateSessionInput } from "../schemas/session.schema";
 
 class SessionController {
-  sessionService: SessionService;
-  userService: UserService;
-
-  constructor(sessionService: SessionService, userService: UserService) {
-    this.sessionService = sessionService;
-    this.userService = userService;
-  }
-
   async getUserSession(req: Request, res: Response) {
     const userId = res.locals.user.user_id;
-    const sessions = await sessionService.findSession({ userId, valid: true });
-    return res.json(sessions);
+    const session = findSession({ userId, valid: true });
+    return res.json(session);
   }
 
   async createUserSession(
@@ -26,14 +22,14 @@ class SessionController {
     res: Response
   ) {
     //validate user's password
-    const user = await this.userService.verifyUser(req.body);
+    const user = await verifyUser(req.body);
     if (!user) {
       return res
         .status(StatusCodes.UNAUTHORIZED)
         .send("Invalid username or password");
     }
     //create a session
-    const session = await this.sessionService.createSession(
+    const session = await createSession(
       user.user_id,
       req.get("user-agent") || ""
     );
@@ -57,18 +53,13 @@ class SessionController {
   async deleteUserSession(res: Response, req: Request) {
     const sessionId = res.locals.user.session_id;
 
-    await this.sessionService.updateSession(
-      { session_id: sessionId },
-      { valid: false }
-    );
+    await updateSession({ session_id: sessionId }, { valid: false });
 
     return res.send({
       accessToken: null,
       refreshToken: null,
     });
-    //delete session
-    //delete refresh token
   }
 }
 
-export default new SessionController(sessionService, userService);
+export default new SessionController();
