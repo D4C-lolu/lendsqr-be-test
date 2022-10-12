@@ -4,6 +4,7 @@ import userService, { UserService } from "../services/user.service";
 import { StatusCodes } from "http-status-codes";
 import { signJWT } from "../utils/jwt.utils";
 import { ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL } from "../../config/constants";
+import { CreateSessionInput } from "../schemas/session.schema";
 
 class SessionController {
   sessionService: SessionService;
@@ -20,7 +21,10 @@ class SessionController {
     return res.json(sessions);
   }
 
-  async createUserSession(req: Request, res: Response) {
+  async createUserSession(
+    req: Request<{}, {}, CreateSessionInput["body"]>,
+    res: Response
+  ) {
     //validate user's password
     const user = await this.userService.verifyUser(req.body);
     if (!user) {

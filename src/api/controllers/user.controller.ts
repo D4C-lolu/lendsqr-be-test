@@ -23,9 +23,6 @@ class UserController {
       return res.status(StatusCodes.BAD_REQUEST).send(err.message);
     }
   }
-  async getCurrentUser() {}
-
-  async updateField() {}
 }
 
 export default new UserController(userService);

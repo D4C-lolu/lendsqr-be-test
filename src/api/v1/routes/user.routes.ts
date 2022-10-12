@@ -6,7 +6,7 @@ import { createUserSchema } from "../../schemas/user.schema";
 const router = express.Router();
 
 router.get("/", (req: Request, res: Response) => {
-  return res.send("Still Alive!");
+  return res.send("E-wallet API up and running!");
 });
 
 router.post("/", validateResource(createUserSchema), userController.createUser);

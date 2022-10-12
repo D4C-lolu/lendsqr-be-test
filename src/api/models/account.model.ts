@@ -14,8 +14,18 @@ export async function createAccountTable(knex: Knex): Promise<void> {
         .onDelete("CASCADE");
       table.timestamps(true, true);
     })
-    .raw("ALTER TABLE accounts AUTO_INCREMENT = 1000000000");
+    .raw("ALTER TABLE accounts AUTO_INCREMENT = 1000000001");
 }
+
+export interface Account {
+  account_number: string;
+  balance: number;
+  pin: string;
+  account_user: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export async function removeAccountTable(knex: Knex): Promise<void> {
   return knex.schema.dropTable("accounts");
 }

@@ -9,7 +9,7 @@ import cors from "cors";
 import helmet from "helmet";
 import { CORS_ORIGIN, PORT } from "./config/constants";
 import { logger, connectToDatabase, disconnectFromDatabase } from "./api/utils";
-import { sessionRoutes, userRoutes } from "./api/v1/routes";
+import { accountRoutes, sessionRoutes, userRoutes } from "./api/v1/routes";
 import deserializeUser from "./api/middlewares/deserializeUsers";
 
 const app = express();
@@ -29,6 +29,7 @@ app.use(deserializeUser);
 //routes
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/sessions", sessionRoutes);
+app.use("api/v1/accounts", accountRoutes);
 
 const server = app.listen(PORT, async () => {
   await connectToDatabase();

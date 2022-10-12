@@ -4,6 +4,9 @@ export const PORT = process.env.PORT || 3000;
 
 export const NODE_ENV = process.env.NODE_ENV || "development";
 
+export const BANK_ACCOUNT_NUMBER =
+  process.env.BANK_ACCOUNT_NUMBER || "1000000000";
+
 export const DB_PASSWORD = process.env.DB_CONNECTION_STRING || "bohemian";
 
 export const DB_HOST = process.env.DB_HOST || "localhost";

@@ -2,7 +2,12 @@ import { Knex } from "knex";
 
 export async function createTransactionTable(knex: Knex): Promise<void> {
   return knex.schema.createTable("transactions", (table) => {
-    table.string("transaction_id,50").primary();
+    table.increments("transaction_id");
+    table.primary([
+      "sender_account_number",
+      "receiver_account_number",
+      "transaction_id",
+    ]);
     table.string("name").notNullable();
     table.text("message");
     table.decimal("amount").notNullable();
