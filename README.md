@@ -24,7 +24,7 @@ The E-wallet API is a backend for a hypothetical mobile peer-to-peer base lendin
 
 The API for the service is a rather simple one witth only 3 models: a 'Users' model for each user, an 'Accounts' model containing the fiscal balance and pin information of each user. It is related to the User model via a foreign key 'account_user' referencing the 'user_id' of the User model. The last model is the 'Transactions' model representing every transfer that occurs.
 
-### [DB Model](https://dbdesigner.page.link/PfWcXqxkfg38UsFa6)
+### [DB Model](https://dbdesigner.page.link/DTYzGfBBN53Ai6ci6)
 
 ![DataBase UML diagram](https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.countryliving.com%2Flife%2Fg32106800%2Fsunset-quotes%2F&psig=AOvVaw13im4k4OFpxdKJC6kZEASB&ust=1665476812320000&source=images&cd=vfe&ved=0CAwQjRxqFwoTCICFxeCe1foCFQAAAAAdAAAAABAE)
 
@@ -33,16 +33,12 @@ The API for the service is a rather simple one witth only 3 models: a 'Users' mo
 Several E-wallet lending solutions already exist such as [Carbon](https://https://ng.getcarbon.co/), [Branch](https://https://branch.com.ng/) and [FairMoney](https://https://fairmoney.ng/).
 However, most of these require a centralized party dispensing the loans. This service instead allows users to receive loans from _other_ users.
 
-## Testing
-
-TBD
-
-## Open Questions
-
-TBD
-
 ## Detailed Scoping and Timeline
 
-## Usage
-
-TBD
+- Research Knex and Wallet API design
+- Bootstrap Project
+- Set up models
+- Implement service layer
+- Implement controllers
+- Testing
+- Deployment

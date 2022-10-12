@@ -10,6 +10,7 @@ import {
   disconnectFromDatabase,
   createServer,
 } from "./api/utils";
+import swaggerDocs from "./api/utils/swagger";
 
 const app = createServer();
 
@@ -20,6 +21,7 @@ app.get("/", (req, res) => {
 const server = app.listen(PORT, async () => {
   await connectToDatabase();
   logger.info(`Server listening at http://localhost:${PORT}`);
+  swaggerDocs(app, PORT.toString());
 });
 
 const signals = ["SIGINT", "SIGTERM", "SIGQUIT"];
